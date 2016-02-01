@@ -123,17 +123,18 @@ class ServerThread extends Thread{
 
         //DB問い合わせ
         public ResultSet dbQuery(String usrID, String sel, String where){
+		ResultSet rs = null;
+
                 try{
                         String sql = String.format("SELECT %s FROM User WHERE %s='%s'", sel, where, usrID);
-                        ResultSet rs = this.smt.executeQuery(sql);
+                        rs = this.smt.executeQuery(sql);
                         //System.out.println(rs.getString(sel));
-                        return rs;
 
                 }catch(SQLException sqle){
                         sqle.printStackTrace();
-                }
+		}
 
-                return null;
+                return rs;
         }
 
 
@@ -172,7 +173,10 @@ class ServerThread extends Thread{
 		byte[] c_hash = null;
 		byte[] s_hash = null;
 		byte[] hh = null;
+		byte[] pass = null;
 		SecureRandom r = null;
+
+		boolean succeeded = false;
 		
 		try{
 			
@@ -206,21 +210,24 @@ class ServerThread extends Thread{
 			//hash値の生成
 			//hash' = (usrID, pass', nonceR, nonceRR)	
 			ResultSet p = dbQuery(new String(usrID, "UTF-8"), "password", "user_id");
-			byte[] pass = p.getString("password").getBytes();
+			if(p.next()){
+				pass = p.getString("password").getBytes();
 			
-			bytebuf = ByteBuffer.allocate(usrID.length + pass.length + nonceR.length + nonceRR.length);
-			bytebuf.put(usrID);
-			bytebuf.put(pass);
-			bytebuf.put(nonceR);
-			bytebuf.put(nonceRR);
-			hh = bytebuf.array();
+				bytebuf = ByteBuffer.allocate(usrID.length + pass.length + nonceR.length + nonceRR.length);
+				bytebuf.put(usrID);
+				bytebuf.put(pass);
+				bytebuf.put(nonceR);
+				bytebuf.put(nonceRR);
+				hh = bytebuf.array();
 
-			MessageDigest md = MessageDigest.getInstance("SHA-1");
-			s_hash = md.digest(hh);
+				MessageDigest md = MessageDigest.getInstance("SHA-1");
+				s_hash = md.digest(hh);
 
-		
-			//hash値の検証
-			boolean succeeded = Arrays.equals(s_hash, c_hash);
+				//hash値の検証
+				succeeded = Arrays.equals(s_hash, c_hash);
+			}
+
+
 			if(succeeded){
 				System.out.println("Authentication: Successfully ->  " + this.soc.getInetAddress());		
 
@@ -233,7 +240,9 @@ class ServerThread extends Thread{
 				
 			}else{
 				System.out.println("Authentication: Invalid id/password -> " + this.soc.getInetAddress());
-			        	
+				//認証通知
+                                dos.writeBoolean(succeeded);
+                                dos.flush();        	
 			}
 	
 			

@@ -137,41 +137,16 @@ class ServerThread extends Thread{
         }
 
 
-	//共通鍵生成
-	public byte[] generatedKey(String id){
-		char[] password = id.toCharArray();
-		byte[] salt = new byte[] {1};
-
-		try{
-			SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
-			KeySpec spec = new PBEKeySpec(password, salt, 65536, 128); // 128Bit
-			SecretKey tmp = factory.generateSecret(spec);
-			return tmp.getEncoded();
-
-		}catch(NoSuchAlgorithmException ne){
-                        ne.printStackTrace();
-		}catch(InvalidKeySpecException ie){
-			ie.printStackTrace();
-		}
-
-		//KeyGenerator gen = KeyGenerator.getInstance("AES");
-		//gen.init(128);
-		//SecretKey key=gen.generateKey();
-
-		return null;
-
-	}
-
 
 	//RabbitMQへアカウント登録	
 	public static void RMQSignUP(String user, String hash_pass){
-		System.out.println("password: " + hash_pass);
+		//System.out.println("password: " + hash_pass);
 		try{
 			ProcessBuilder pb1 = new ProcessBuilder("sudo", "rabbitmqctl", "add_user", user, hash_pass);
 			Process process1 = pb1.start();
 			ProcessBuilder pb2 = new ProcessBuilder("sudo", "rabbitmqctl", "set_permissions", user, ".*", ".*", ".*");
 			Process process2 = pb2.start();
-			System.out.println("Sined up");
+			//System.out.println("Sined up");
 				 
 		}catch(Exception exc){
 			exc.printStackTrace();
